@@ -26,14 +26,12 @@ class Miner(Machine):
         return obj
 
     @staticmethod
-    def from_dict(game, data):
-        ore_type = data.get("ore_type") or "copper"
-        last_drop = data.get("last_drop") or 0
+    def from_dict(game, data: dict):
         instance = Miner(
             game,
             pos=data.get("position", (0, 0)),
-            ore_type=ore_type,
-            last_drop=last_drop,
+            ore_type=data.get("ore_type", "copper"),
+            last_drop=data.get("last_drop", 0),
         )
         instance.direction = data.get("direction", 1)
         return instance

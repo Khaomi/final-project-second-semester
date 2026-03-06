@@ -62,7 +62,7 @@ class UI(GameObject):
                     (x * self.game.SIZE_PER_TILE, y),
                 )
 
-    def __render_mode(self, screen):
+    def __render_ui(self, screen):
         mode = "Insert"
 
         if self.game.input.mode == 2:
@@ -71,7 +71,11 @@ class UI(GameObject):
             mode = "Remove"
 
         screen.blit(
-            self.game.FONTS["Arial"].render(f"Mode: {mode}", True, "White"), (0, 10)
+            self.game.FONTS["Arial"].render(f"Cash: {self.game.cash}", True, "White"),
+            (0, 0),
+        )
+        screen.blit(
+            self.game.FONTS["Arial"].render(f"Mode: {mode}", True, "White"), (0, 32)
         )
 
     def __render_debug(self, screen):
@@ -83,7 +87,6 @@ class UI(GameObject):
         )
 
         elements = [
-            self.game.FONTS["Arial"].render(f"Cash: {self.game.cash}", True, "White"),
             self.game.FONTS["Arial"].render(
                 f"Mouse Pos: {pygame.mouse.get_pos()}", True, "White"
             ),
@@ -99,20 +102,20 @@ class UI(GameObject):
             ),
             self.game.FONTS["Arial"].render(
                 f"Obj count: {len(self.game.objects)}", True, "White"
-            )
+            ),
         ]
 
         for x in range(len(elements)):
             screen.blit(
                 elements[x],
-                (0, (x * 18) + 32),
+                (0, (x * 18) + 64),
             )
 
     def render(self, screen):
         self.__render_grid(screen)
         self.__render_cursor(screen)
         self.__render_selector(screen)
-        self.__render_mode(screen)
+        self.__render_ui(screen)
 
         if self.game.DEBUG:
             self.__render_debug(screen)

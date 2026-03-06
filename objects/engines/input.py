@@ -72,7 +72,9 @@ class Input(GameObject):
                         self.direction = 4
                     for x in self.selectors:
                         x.direction = self.direction
-                    self.selected_obj.direction = self.direction
+
+                    if self.selected_obj:
+                        self.selected_obj.direction = self.direction
 
                 if event.dict["key"] == 100:
                     self.game.DEBUG = not self.game.DEBUG
@@ -152,6 +154,8 @@ class Input(GameObject):
                     obj.direction = self.direction
                     obj.snap_to_grid()
                     obj.add_to_game()
+                    if isinstance(obj, Machine):
+                        obj.check_for_item()
                     self.game.remove_cash(self.selected_obj.cost)
                     self.game.statistics.increment("items_spawned")
                 elif self.mode == 2:

@@ -3,5 +3,7 @@ __pycache__/
 
 statistics.json
 save_debug.json
+save_debug.data
+save.data
 save.json
 .DS_Store

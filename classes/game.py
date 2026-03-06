@@ -13,6 +13,7 @@ import time
 import math
 import json
 from pathlib import Path
+import marshal
 
 if TYPE_CHECKING:
     from objects.game_object import GameObject
@@ -54,10 +55,12 @@ class Game:
 
         self.position_map: Dict[Tuple[int, int], List[GameObject]] = {}
 
-        if not self.load_game("save.json"):
+        if not self.load_game("save"):
             pass
 
     def save_game(self, filename: str):
+        filename = f"{filename}.data" if not self.DEBUG else f"{filename}.json"
+
         save_data = {
             "cash": self.cash,
             "objects": [],
@@ -72,20 +75,32 @@ class Game:
                 save_data["objects"].append(obj_data)
 
         path = Path.cwd() / filename
-        with open(path, "w") as f:
-            json.dump(save_data, f)
+        if self.DEBUG:
+            with open(path, "wt", encoding="utf-8") as f:
+                json.dump(save_data, f)
+        else:
+            with open(path, "wb") as f:
+                marshal.dump(save_data, f)
 
     def load_game(self, filename: str) -> bool:
-        path = Path.cwd() / filename
-        save_data = {}
+        save_data = None
 
-        if path.exists():
+        if (Path.cwd() / (filename + ".data")).exists():
             try:
-                with open(path, "r") as f:
+                with open(Path.cwd() / (filename + ".data"), "rb") as f:
+                    save_data = marshal.load(f)
+            except Exception as e:
+                print(e)
+
+        if save_data is None and (Path.cwd() / (filename + ".json")).exists():
+            try:
+                with open(Path.cwd() / (filename + ".json"), "rt") as f:
                     save_data = json.load(f)
             except Exception as e:
-                print(f"Failed to load save from {filename}: {e}")
-                return False
+                print(e)
+
+        if save_data is None:
+            save_data = {}
 
         self.cash = save_data.get("cash", 11)
         self.objects = [self.input, self.camera, self.ui]
@@ -104,10 +119,6 @@ class Game:
 
     def add_object(self, obj: GameObject):
         self.objects.append(obj)
-        if obj.grid_position not in self.position_map:
-            self.position_map[obj.grid_position] = [obj]
-        else:
-            self.position_map[obj.grid_position].append(obj)
 
     def remove_object(self, obj: GameObject):
         if obj in self.objects:
@@ -168,6 +179,6 @@ class Game:
             pass
 
         pygame.quit()
-        self.save_game("save.json")
+        self.save_game("save")
         self.statistics.increment("playtime", math.floor(time.time()) - self.start_time)
         self.statistics.save_data("statistics.json")

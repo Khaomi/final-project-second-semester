@@ -33,6 +33,8 @@ class GameObject:
 
         if self.grid_position not in position_map:
             position_map[self.grid_position] = [self]
+        elif self not in position_map[self.grid_position]:
+            position_map[self.grid_position].append(self)
 
     @property
     def grid_position(self):

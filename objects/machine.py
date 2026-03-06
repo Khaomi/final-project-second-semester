@@ -98,6 +98,15 @@ class Machine(Sprite):
                 for _ in range(x.get("amount", 1)):
                     self.output_item(x["item-id"])
 
+    def check_for_item(self):
+        if self.grid_position not in self.game.position_map:
+            return
+
+        for x in self.game.position_map[self.grid_position]:
+            if not isinstance(x, Item):
+                continue
+            self.insert_item(x)
+
     def output_item(self, item_id):
         output_item = Item(self.game, item_id)
         output_item.set_position(self.grid_to_world(self.get_forward()))
@@ -105,12 +114,7 @@ class Machine(Sprite):
 
     def move(self, position):
         super().move(position)
-
-        if self.grid_position in self.game.position_map:
-            for x in self.game.position_map[self.grid_position]:
-                if not isinstance(x, Item):
-                    continue
-                self.insert_item(x)
+        self.check_for_item()
 
     def render(self, screen):
         super().render(screen)
