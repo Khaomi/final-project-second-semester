@@ -43,6 +43,10 @@ class GameObject(EventEmitter):
     def __update_visibility(self):
         self.visible = self.active and self.game.camera.is_in_camera(self.rect)
 
+    def snap_to_grid(self):
+        # Neat trick :3
+        self.grid_position = self.grid_position
+
     @property
     def grid_position(self):
         return Vector2(

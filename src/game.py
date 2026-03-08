@@ -4,6 +4,7 @@ from pygame import Clock, Surface, event, display, Vector2
 from pygame.sprite import DirtySprite, LayeredDirty
 from src.classes.event_emitter import EventEmitter
 from src.classes.sprite_object import Sprite
+from src.classes.ui import UI
 from src.static_config import GRID_SIZE
 from src.classes.camera import Camera
 from typing import TYPE_CHECKING, Any
@@ -26,38 +27,43 @@ class Game(EventEmitter):
         self.sprite_layers: LayeredDirty[DirtySprite] = LayeredDirty(default_layer=1)
         self.camera = Camera(self)
         self.input = Input(self)
+        self.ui = UI(self)
         self.objects: list[GameObject] = []
         self.bg = Surface((1280, 720))
         self.bg.fill("black")
 
         if Game.DEBUG:
-            self.objects.append(
+            debug_objects: list[GameObject] = []
+            debug_objects.append(
                 Sprite(
                     self,
                     "/Users/hayper/Downloads/pixil-frame-0.png",
                 )
             )
-            self.objects.append(
+            debug_objects.append(
                 Sprite(
                     self,
                     "/Users/hayper/Downloads/pixil-frame-0.png",
                     position=Vector2(1280 - GRID_SIZE, 0),
                 )
             )
-            self.objects.append(
+            debug_objects.append(
                 Sprite(
                     self,
                     "/Users/hayper/Downloads/pixil-frame-0.png",
                     position=Vector2(0, 720 - GRID_SIZE),
                 )
             )
-            self.objects.append(
+            debug_objects.append(
                 Sprite(
                     self,
                     "/Users/hayper/Downloads/pixil-frame-0.png",
                     position=Vector2(1280 - GRID_SIZE, 720 - GRID_SIZE),
                 )
             )
+            for x in debug_objects:
+                x.snap_to_grid()
+            self.objects.extend(debug_objects)
 
         display.set_caption("Funky Factory Game")
 
