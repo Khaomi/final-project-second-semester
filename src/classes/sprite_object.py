@@ -136,7 +136,7 @@ class Sprite(GameObject):
 
     @property
     def visible(self):
-        return self.sprite.visible
+        return self.sprite.visible == 1
 
     @visible.setter
     def visible(self, value: bool):  # type: ignore
