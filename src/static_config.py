@@ -1,7 +1,9 @@
-from enum import Enum
+from __future__ import annotations
+
+from enum import IntEnum
 
 
-class SPRITE_LAYER(Enum):
+class SPRITE_LAYER(IntEnum):
     BG = 0
     GRID = 1
     DEFAULT = 2
@@ -11,3 +13,5 @@ class SPRITE_LAYER(Enum):
 
 
 GRID_SIZE = 64
+# FOR TESTING PURPOSE.
+CULLING_DISABLED = False

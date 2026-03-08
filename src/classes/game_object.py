@@ -1,12 +1,15 @@
-from pygame import Vector2, Rect, Event, Surface
+from __future__ import annotations
+
+from src.classes.event_emitter import EventEmitter
+from pygame import Vector2, Rect, Surface
 from src.static_config import GRID_SIZE
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.game import Game
 
 
-class GameObject:
+class GameObject(EventEmitter):
     def __init__(
         self,
         game: Game,
@@ -14,12 +17,13 @@ class GameObject:
         size: Vector2 | None = None,
         rotation: int = 0,
     ):
+        super().__init__()
         self.game = game
 
         """
         Absolute position
         """
-        self.position = position if position else Vector2()
+        self.position = position if position else Vector2(0, 0)
         """
         Grid size for this object
         """
@@ -28,6 +32,18 @@ class GameObject:
         Current rotation
         """
         self._rotation = rotation % 360
+
+        self.active = True
+        self.visible = False
+
+        self.game.camera.on("resize", self.__update_visibility)
+        self.game.camera.on("move", self.__update_visibility)
+        self.__update_visibility()
+
+    def __update_visibility(self):
+        cam_pos = self.game.camera.world_to_screen(self.position)
+        rect = Rect(cam_pos.x, cam_pos.y, self.rect.width, self.rect.height)
+        self.visible = self.active and self.game.camera.is_in_camera(rect)
 
     @property
     def grid_position(self):
@@ -42,10 +58,6 @@ class GameObject:
             int(value.x) * GRID_SIZE,
             int(value.y) * GRID_SIZE,
         )
-
-    @property
-    def visible(self):
-        return self.game.camera.is_in_camera(self.rect)
 
     @property
     def rotation(self):
@@ -78,9 +90,7 @@ class GameObject:
 
         return Rect(screen_vec.x, screen_vec.y, abs_size.x, abs_size.y)
 
-    #
-
-    def update(self, dt: float, events: List[Event]):
+    def update(self, dt: float):
         pass
 
     def render(self, surface: Surface):

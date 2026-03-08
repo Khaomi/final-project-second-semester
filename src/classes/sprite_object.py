@@ -1,4 +1,6 @@
-from src.static_config import SPRITE_LAYER, GRID_SIZE
+from __future__ import annotations
+
+from src.static_config import SPRITE_LAYER, GRID_SIZE, CULLING_DISABLED
 from src.classes.game_object import GameObject
 from pygame import Vector2, image, transform
 from pygame.sprite import DirtySprite
@@ -19,11 +21,39 @@ class GameObjectDirtySprite(DirtySprite):
         rotation: int = 0,
         *groups,  # type: ignore
     ):
+
         super().__init__(groups)  # type: ignore
         self.game = game
-        self._position = position if position else Vector2()
+        self._position = position if position else Vector2(0, 0)
         self._size = size if size else Vector2(1, 1)
         self._rotation = rotation % 360
+        self._active = True
+
+        self.game.camera.on("resize", self.__update_visibility)
+        self.game.camera.on("move", self.__update_visibility)
+        self.__update_visibility()
+
+    def __update_visibility(self):
+        world_rect = Rect(
+            self._position.x,
+            self._position.y,
+            self.size.x * GRID_SIZE,
+            self.size.y * GRID_SIZE,
+        )
+        self._visible = CULLING_DISABLED or (
+            self._active and self.game.camera.is_in_camera(world_rect)
+        )
+        self.dirty = 1
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value: bool):
+        self._active = value
+        self.dirty = 1
+        self.__update_visibility()
 
     @property
     def rect(self) -> Rect:  # type: ignore
@@ -32,23 +62,16 @@ class GameObjectDirtySprite(DirtySprite):
 
     @property
     def visible(self) -> int:  # type: ignore
-        return (
-            (self.layer == SPRITE_LAYER.DEBUG and self.game.DEBUG)
-            or self.game.camera.is_in_camera(
-                (self._position.x, self._position.y, self._size.x, self._size.y)
-            )
-            and 1
-            or 0
-        )
+        return self._active and self._visible and 1 or 0
 
     @property
     def position(self):
-        return self._size
+        return self._position
 
     @position.setter
     def position(self, value: Vector2):
         self._position = value
-        self.dirty = 1
+        self.__update_visibility()
 
     @property
     def size(self):
@@ -57,7 +80,7 @@ class GameObjectDirtySprite(DirtySprite):
     @size.setter
     def size(self, value: Vector2):
         self._size = value
-        self.dirty = 1
+        self.__update_visibility()
 
     @property
     def rotation(self):
@@ -66,7 +89,20 @@ class GameObjectDirtySprite(DirtySprite):
     @rotation.setter
     def rotation(self, value: int):
         self._rotation = value
-        self.dirty = 1
+        self.__update_visibility()
+
+    def should_cull(self):
+        return not CULLING_DISABLED and (
+            not self._active
+            or not self.game.camera.is_in_camera(
+                (
+                    self._position.x,
+                    self._position.y,
+                    self._size.x * GRID_SIZE,
+                    self._size.y * GRID_SIZE,
+                )
+            )
+        )
 
 
 class Sprite(GameObject):
@@ -80,7 +116,6 @@ class Sprite(GameObject):
         layer: SPRITE_LAYER = SPRITE_LAYER.DEFAULT,
     ):
         self.game = game
-
         self.sprite = GameObjectDirtySprite(
             self.game, position=position, size=size, rotation=rotation
         )
@@ -89,6 +124,23 @@ class Sprite(GameObject):
         self.sprite.image = transform.rotate(self._base_image, self.sprite.rotation)
 
         self.game.sprite_layers.add(self.sprite, layer=layer)
+        super().__init__(game, position, size, rotation)
+
+    @property
+    def active(self):
+        return self.sprite.active
+
+    @active.setter
+    def active(self, value: bool):
+        self.sprite.active = value
+
+    @property
+    def visible(self):
+        return self.sprite.visible
+
+    @visible.setter
+    def visible(self, value: bool):  # type: ignore
+        pass
 
     @property
     def position(self):

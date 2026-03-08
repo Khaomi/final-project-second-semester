@@ -1,21 +1,30 @@
-from pygame import Vector2, Event, Rect, display
-from typing import TYPE_CHECKING, List
+from __future__ import annotations
+
+from src.classes.event_emitter import EventEmitter
+from pygame import Vector2, Rect, display
+from typing import TYPE_CHECKING, Any
 import pygame
+
 
 if TYPE_CHECKING:
     from pygame.typing import RectLike
     from src.game import Game
 
 
-class Camera:
+class Camera(EventEmitter):
     def __init__(self, game: Game, position: Vector2 | None = None):
+        super().__init__()
+
         self.game = game
-        self._position = position if position else Vector2()
+        self._position = position if position else Vector2(0)
         self._size = Vector2(display.get_window_size())
 
-    def __mark_sprite_as_dirty(self):
-        for x in self.game.sprite_layers.sprites():
-            x.dirty = 1
+        self.game.on(f"PYGAME_{pygame.WINDOWRESIZED}", self.__on_window_resized)
+
+    def __on_window_resized(self, value: dict[str, Any]):
+        self._size = Vector2(value["x"], value["y"])
+        self.game.request_flip()
+        self.emit("resize")
 
     @property
     def position(self):
@@ -24,7 +33,7 @@ class Camera:
     @position.setter
     def position(self, value: Vector2):
         self._position = value
-        self.__mark_sprite_as_dirty()
+        self.emit("move")
 
     @property
     def rect(self):
@@ -44,9 +53,5 @@ class Camera:
     def is_in_camera(self, rect: RectLike):
         return self.rect.colliderect(rect)
 
-    def update(self, dt: float, events: List[Event]):
-        for event in events:
-            if event.type == pygame.WINDOWRESIZED:
-                self._size = Vector2(event.dict["x"], event.dict["y"])
-                self.__mark_sprite_as_dirty()
-                self.game.request_flip()
+    def update(self, dt: float):
+        pass
