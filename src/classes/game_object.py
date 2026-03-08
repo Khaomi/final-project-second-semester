@@ -41,9 +41,7 @@ class GameObject(EventEmitter):
         self.__update_visibility()
 
     def __update_visibility(self):
-        cam_pos = self.game.camera.world_to_screen(self.position)
-        rect = Rect(cam_pos.x, cam_pos.y, self.rect.width, self.rect.height)
-        self.visible = self.active and self.game.camera.is_in_camera(rect)
+        self.visible = self.active and self.game.camera.is_in_camera(self.rect)
 
     @property
     def grid_position(self):
