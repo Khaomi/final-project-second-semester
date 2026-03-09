@@ -121,14 +121,17 @@ class Sprite(GameObject):
     ):
         self.game = game
         self.sprite = GameObjectDirtySprite(
-            self.game, position=position, size=size, rotation=rotation
+            self.game,
+            position=position,
+            size=size,
+            rotation=rotation,
         )
 
         self._base_image = image.load(file).convert_alpha()
         self.sprite.image = transform.rotate(self._base_image, self.sprite.rotation)
 
         self.game.sprite_layers.add(self.sprite, layer=layer)
-        super().__init__(game, position, size, rotation)
+        super().__init__(game, position, size, rotation, track_camera_visibility=False)
 
     @property
     def active(self):

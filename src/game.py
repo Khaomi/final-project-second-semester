@@ -152,6 +152,8 @@ class Game(EventEmitter):
                 for x in self.objects:
                     if not x.visible:
                         continue
+                    if isinstance(x, Sprite):
+                        continue
                     x.render(self.surface)
 
                 rects = self.sprite_layers.draw(self.surface)
@@ -180,8 +182,9 @@ class Game(EventEmitter):
 
         for x in self.objects:
             x.destroy()
-            # self.camera.destroy()
-            self.input.destroy()
-            # self.ui.destroy()
+
+        # self.camera.destroy()
+        # self.ui.destroy()
+        self.input.destroy()
 
         self.objects = []

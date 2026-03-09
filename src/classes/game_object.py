@@ -16,6 +16,7 @@ class GameObject(EventEmitter):
         position: Vector2 | None = None,
         size: Vector2 | None = None,
         rotation: int = 0,
+        track_camera_visibility: bool = True,
     ):
         super().__init__()
         self.game = game
@@ -37,8 +38,11 @@ class GameObject(EventEmitter):
         self.active = True
         self.visible = False
 
-        self.game.camera.on("resize", self.__update_visibility)
-        self.game.camera.on("move", self.__update_visibility)
+        self.track_camera_visibility = track_camera_visibility
+        if track_camera_visibility:
+            self.game.camera.on("resize", self.__update_visibility)
+            self.game.camera.on("move", self.__update_visibility)
+
         self.__update_visibility()
         self._update_position_map(self._position)
 
@@ -187,6 +191,7 @@ class GameObject(EventEmitter):
         if self in self.game.objects:
             self.game.objects.remove(self)
 
-        self.game.camera.remove_listener("resize", self.__update_visibility)
-        self.game.camera.remove_listener("move", self.__update_visibility)
+        if self.track_camera_visibility:
+            self.game.camera.remove_listener("resize", self.__update_visibility)
+            self.game.camera.remove_listener("move", self.__update_visibility)
         self.remove_all_listeners()
