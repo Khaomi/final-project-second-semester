@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from src.static_config import DIRECTION, GRID_SIZE
 from src.objects.sprite import Sprite
 from typing import TYPE_CHECKING
 from pygame import Vector2, math
+
 
 if TYPE_CHECKING:
     from src.objects.item import Item
@@ -32,6 +34,11 @@ class Belt(Sprite):
     def rotation(self, value: int):  # type: ignore
         self.__unlink_belt_list()
         Sprite.rotation.fset(self, value)  # type: ignore
+        for item in self.item_progess:
+            self.item_progess[item] = 0
+        for item in self.__item_start_pos:
+            self.__item_start_pos[item] = item.position.copy()
+
         self.__link_belt_list()
 
     @Sprite.position.setter
@@ -106,18 +113,21 @@ class Belt(Sprite):
     def update(self, dt: float):
         super().update(dt)
 
-        forward_grid = self.get_forward()
+        rotation_vector = self.get_rotation_vector(DIRECTION.FORWARD)
 
         for item in list(self.item_progess):
             self.item_progess[item] += dt * self.speed
 
             progress = min(self.item_progess[item], 1)
 
-            forward_x, forward_y = forward_grid.x, forward_grid.y
             start_pos = self.__item_start_pos[item]
+            target_x, target_y = (
+                start_pos.x + (rotation_vector[0] * GRID_SIZE),
+                start_pos.y + (rotation_vector[1] * GRID_SIZE),
+            )
             item.position = Vector2(
-                math.lerp(start_pos.x, forward_x, progress),
-                math.lerp(start_pos.y, forward_y, progress),
+                math.lerp(start_pos.x, target_x, progress),
+                math.lerp(start_pos.y, target_y, progress),
             )
 
             if self.item_progess[item] >= 1:
