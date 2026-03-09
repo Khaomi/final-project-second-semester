@@ -127,6 +127,9 @@ class Sprite(GameObject):
             rotation=rotation,
         )
 
+        self._position = position
+        self._rotation = rotation
+
         self._base_image = image.load(file).convert_alpha()
         self.sprite.image = transform.rotate(self._base_image, self.sprite.rotation)
 
@@ -157,6 +160,7 @@ class Sprite(GameObject):
     def position(self, value: Vector2):
         self._update_position_map(value, self.sprite.position)
         self.sprite.position = value
+        self._position = value
 
     @property
     def rotation(self) -> int:
@@ -168,6 +172,7 @@ class Sprite(GameObject):
         self.sprite.rotation = value
         self.sprite.image = transform.rotate(self._base_image, value)
         self.sprite.dirty = 1
+        self._rotation = value
 
     @property
     def size(self) -> Vector2:

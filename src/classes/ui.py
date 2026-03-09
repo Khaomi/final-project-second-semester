@@ -71,3 +71,6 @@ class UI(EventEmitter):
         self.game = game
         self.grid_sprite = GridSprite(game)
         self.game.sprite_layers.add(self.grid_sprite, layer=SPRITE_LAYER.GRID)
+
+    def destroy(self):
+        self.remove_all_listeners()

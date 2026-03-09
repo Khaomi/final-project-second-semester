@@ -170,9 +170,6 @@ class GameObject(EventEmitter):
 
         return Rect(screen_vec.x, screen_vec.y, abs_size.x, abs_size.y)
 
-    def update(self, dt: float):
-        pass
-
     def render(self, surface: Surface):
         """
         SHOULD ONLY USE THIS WHEN IT IS *REALLY* NEEDED, WE HAVE `Sprite` CLASS THAT DOES DIRTY RENDERING

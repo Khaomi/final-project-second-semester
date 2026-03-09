@@ -53,5 +53,5 @@ class Camera(EventEmitter):
     def is_in_camera(self, rect: RectLike):
         return self.rect.colliderect(rect)
 
-    def update(self, dt: float):
-        pass
+    def destroy(self):
+        self.remove_all_listeners()
