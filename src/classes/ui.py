@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from pygame import SRCALPHA, Rect, Surface, display, draw
-from src.classes.event_emitter import EventEmitter
 from src.static_config import GRID_SIZE, SPRITE_LAYER
+from src.classes.event_emitter import EventEmitter
 from pygame.sprite import DirtySprite
 from typing import TYPE_CHECKING
 

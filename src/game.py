@@ -3,12 +3,14 @@ from __future__ import annotations
 from pygame import Clock, Surface, event, display, Vector2
 from pygame.sprite import DirtySprite, LayeredDirty
 from src.classes.event_emitter import EventEmitter
-from src.classes.sprite_object import Sprite
-from src.classes.ui import UI
 from src.static_config import GRID_SIZE
+from src.objects.sprite import Sprite
 from src.classes.camera import Camera
 from typing import TYPE_CHECKING, Any
 from src.classes.input import Input
+from src.objects.item import Item
+from src.objects.belt import Belt
+from src.classes.ui import UI
 import pygame
 
 
@@ -32,32 +34,37 @@ class Game(EventEmitter):
         self.bg = Surface((1280, 720))
         self.bg.fill("black")
 
+        self.position_map: dict[tuple[int, int], list[GameObject]] = {}
+
         if Game.DEBUG:
             debug_objects: list[GameObject] = []
+            for x in range(10):
+                debug_objects.append(Belt(self, Vector2((64 * 2, 64 * x))))
+                debug_objects.append(Item(self, Vector2((64 * 2, 64 * x))))
             debug_objects.append(
                 Sprite(
                     self,
-                    "/Users/hayper/Downloads/pixil-frame-0.png",
+                    "assets/sprite/x.png",
                 )
             )
             debug_objects.append(
                 Sprite(
                     self,
-                    "/Users/hayper/Downloads/pixil-frame-0.png",
+                    "assets/sprite/x.png",
                     position=Vector2(1280 - GRID_SIZE, 0),
                 )
             )
             debug_objects.append(
                 Sprite(
                     self,
-                    "/Users/hayper/Downloads/pixil-frame-0.png",
+                    "assets/sprite/x.png",
                     position=Vector2(0, 720 - GRID_SIZE),
                 )
             )
             debug_objects.append(
                 Sprite(
                     self,
-                    "/Users/hayper/Downloads/pixil-frame-0.png",
+                    "assets/sprite/x.png",
                     position=Vector2(1280 - GRID_SIZE, 720 - GRID_SIZE),
                 )
             )

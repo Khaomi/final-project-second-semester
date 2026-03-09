@@ -7,6 +7,28 @@ from typing import Any, Callable
 Listener = Callable[..., Any]
 
 
+def is_same_listener(a: Any, b: Any) -> bool:
+    """Treat bound methods with the same instance+function as the same listener."""
+    if a is b:
+        return True
+
+    if a is None or b is None:
+        return False
+
+    a_func = getattr(a, "__func__", None)
+    b_func = getattr(b, "__func__", None)
+    a_self = getattr(a, "__self__", None)
+    b_self = getattr(b, "__self__", None)
+
+    # Bound methods are recreated on attribute access, so object identity is unstable.
+    return (
+        a_func is not None
+        and b_func is not None
+        and a_func is b_func
+        and a_self is b_self
+    )
+
+
 class EventEmitter:
     def __init__(self) -> None:
         self.__events: dict[str, list[Listener]] = defaultdict(list)
@@ -36,7 +58,10 @@ class EventEmitter:
         removed = False
         for current in listeners:
             original = getattr(current, "__original_listener__", None)
-            if not removed and (current is listener or original is listener):
+            if not removed and (
+                is_same_listener(current, listener)
+                or is_same_listener(original, listener)
+            ):
                 removed = True
                 continue
             kept.append(current)

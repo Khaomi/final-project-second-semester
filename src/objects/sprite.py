@@ -104,6 +104,10 @@ class GameObjectDirtySprite(DirtySprite):
             )
         )
 
+    def destroy(self):
+        self.game.camera.remove_listener("resize", self.__update_visibility)
+        self.game.camera.remove_listener("move", self.__update_visibility)
+
 
 class Sprite(GameObject):
     def __init__(
@@ -148,6 +152,7 @@ class Sprite(GameObject):
 
     @position.setter
     def position(self, value: Vector2):
+        self._update_position_map(value, self.sprite.position)
         self.sprite.position = value
 
     @property
@@ -157,7 +162,7 @@ class Sprite(GameObject):
     @rotation.setter
     def rotation(self, value: int):
         value = value % 360
-        self._rotation = value
+        self.sprite.rotation = value
         self.sprite.image = transform.rotate(self._base_image, value)
         self.sprite.dirty = 1
 
@@ -168,3 +173,8 @@ class Sprite(GameObject):
     @size.setter
     def size(self, value: Vector2):
         self.sprite.size = value
+
+    def destroy(self):
+        self.game.sprite_layers.remove(self.sprite)
+        self.sprite.destroy()
+        super().destroy()
