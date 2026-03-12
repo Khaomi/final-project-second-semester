@@ -25,7 +25,7 @@ class Belt(Sprite):
         self.prevs: list[Belt] = []
 
         self.speed = 1
-        self.item_progess: dict[Item, float] = {}
+        self.item_progress: dict[Item, float] = {}
         self.__item_start_center: dict[Item, Vector2] = {}
 
         self.__link_belt_list()
@@ -43,8 +43,8 @@ class Belt(Sprite):
         self.__unlink_belt_list()
         Sprite.rotation.fset(self, value)  # type: ignore
         self._rotation = value
-        for item in self.item_progess:
-            self.item_progess[item] = 0
+        for item in self.item_progress:
+            self.item_progress[item] = 0
         for item in self.__item_start_center:
             self.__item_start_center[item] = self.__item_center(item)
 
@@ -176,27 +176,27 @@ class Belt(Sprite):
 
         item.belt = self
         item.despawn_timer = 0
-        self.item_progess[item] = max(0.0, initial_progress)
+        self.item_progress[item] = max(0.0, initial_progress)
         self.__item_start_center[item] = self.__item_center(item)
 
     def remove_item(self, item: Item):
         if item.belt != self:
             return
         item.belt = None
-        del self.item_progess[item]
+        del self.item_progress[item]
         del self.__item_start_center[item]
 
     def update(self, dt: float):
         rotation_vector = self.get_rotation_vector(DIRECTION.FORWARD)
 
-        for item in list(self.item_progess):
+        for item in list(self.item_progress):
             if item.destroyed:
                 self.remove_item(item)
                 continue
 
-            self.item_progess[item] += dt * self.speed
+            self.item_progress[item] += dt * self.speed
 
-            progress = min(self.item_progess[item], 1)
+            progress = min(self.item_progress[item], 1)
 
             start_center = self.__item_start_center[item]
             belt_center = self.__belt_center()
@@ -210,8 +210,8 @@ class Belt(Sprite):
             )
             item.position = self.__center_to_item_pos(item, lerped_center)
 
-            if self.item_progess[item] >= 1:
-                overflow = self.item_progess[item] - 1
+            if self.item_progress[item] >= 1:
+                overflow = self.item_progress[item] - 1
                 self.remove_item(item)
                 if self.next:
                     self.next.insert_item(item, initial_progress=overflow)
