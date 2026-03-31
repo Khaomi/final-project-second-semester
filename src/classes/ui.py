@@ -307,7 +307,12 @@ class UI(EventEmitter, DirtySprite):
         return None
 
     def _draw_zoom_info(self):
-        zoom_panel = Rect(self.rect.width - UI_ZOOM_PANEL_X_OFFSET, UI_ZOOM_PANEL_HEIGHT - UI_ZOOM_PANEL_HEIGHT + 12, UI_ZOOM_PANEL_WIDTH, UI_ZOOM_PANEL_HEIGHT)
+        zoom_panel = Rect(
+            self.rect.width - UI_ZOOM_PANEL_X_OFFSET,
+            UI_ZOOM_PANEL_HEIGHT - UI_ZOOM_PANEL_HEIGHT + 12,
+            UI_ZOOM_PANEL_WIDTH,
+            UI_ZOOM_PANEL_HEIGHT,
+        )
         draw.rect(self.image, COLOR_ZOOM_PANEL_BG, zoom_panel, border_radius=6)
         draw.rect(
             self.image, COLOR_ZOOM_PANEL_BORDER, zoom_panel, width=2, border_radius=6
@@ -344,7 +349,9 @@ class UI(EventEmitter, DirtySprite):
         panel_x = self.rect.width - panel_width - UI_INFO_PANEL_X_PADDING
         panel_y = UI_INFO_PANEL_Y_OFFSET
         line_height = UI_INFO_PANEL_LINE_HEIGHT
-        panel_height = UI_INFO_PANEL_PADDING + (line_height * len(lines)) + UI_INFO_PANEL_Y_PADDING
+        panel_height = (
+            UI_INFO_PANEL_PADDING + (line_height * len(lines)) + UI_INFO_PANEL_Y_PADDING
+        )
         info_panel = Rect(panel_x, panel_y, panel_width, panel_height)
         draw.rect(self.image, COLOR_INFO_PANEL_BG, info_panel, border_radius=6)
         draw.rect(
@@ -434,10 +441,23 @@ class UI(EventEmitter, DirtySprite):
 
         machines = [k for k in Data.machine_data.keys() if k != "unknown"]
 
-        LEFT_X, LEFT_Y, LEFT_W, ITEM_H = UI_RECIPE_BOOK_LEFT_X, UI_RECIPE_BOOK_LEFT_Y, UI_RECIPE_BOOK_LEFT_W, UI_RECIPE_BOOK_ITEM_H
-        left_panel = Rect(LEFT_X, LEFT_Y, LEFT_W, screen_h - LEFT_Y - UI_RECIPE_BOOK_LEFT_MARGIN)
+        LEFT_X, LEFT_Y, LEFT_W, ITEM_H = (
+            UI_RECIPE_BOOK_LEFT_X,
+            UI_RECIPE_BOOK_LEFT_Y,
+            UI_RECIPE_BOOK_LEFT_W,
+            UI_RECIPE_BOOK_ITEM_H,
+        )
+        left_panel = Rect(
+            LEFT_X, LEFT_Y, LEFT_W, screen_h - LEFT_Y - UI_RECIPE_BOOK_LEFT_MARGIN
+        )
         draw.rect(self.image, COLOR_RECIPE_LEFT_PANEL_BG, left_panel, border_radius=8)
-        draw.rect(self.image, COLOR_RECIPE_LEFT_PANEL_BORDER, left_panel, width=1, border_radius=8)
+        draw.rect(
+            self.image,
+            COLOR_RECIPE_LEFT_PANEL_BORDER,
+            left_panel,
+            width=1,
+            border_radius=8,
+        )
 
         scroll = self.game.input.recipe_book_scroll
         selected_idx = self.game.input.recipe_book_machine_idx
@@ -448,10 +468,23 @@ class UI(EventEmitter, DirtySprite):
             if y + ITEM_H > left_panel.bottom - UI_RECIPE_BOOK_LEFT_PADDING:
                 break
             row = Rect(LEFT_X + 4, y, LEFT_W - 8, ITEM_H - 3)
-            is_sel = (i == selected_idx)
-            draw.rect(self.image, COLOR_RECIPE_ROW_SELECTED_BG if is_sel else COLOR_RECIPE_ROW_UNSELECTED_BG, row, border_radius=4)
+            is_sel = i == selected_idx
+            draw.rect(
+                self.image,
+                COLOR_RECIPE_ROW_SELECTED_BG
+                if is_sel
+                else COLOR_RECIPE_ROW_UNSELECTED_BG,
+                row,
+                border_radius=4,
+            )
             if is_sel:
-                draw.rect(self.image, COLOR_RECIPE_ROW_SELECTED_BORDER, row, width=1, border_radius=4)
+                draw.rect(
+                    self.image,
+                    COLOR_RECIPE_ROW_SELECTED_BORDER,
+                    row,
+                    width=1,
+                    border_radius=4,
+                )
 
             sprite_path = Data.machine_data[machine_type]["sprite"]
             icon = self._get_item_icon(sprite_path, (28, 28))
@@ -466,9 +499,17 @@ class UI(EventEmitter, DirtySprite):
             y += ITEM_H
 
         RIGHT_X = LEFT_X + LEFT_W + UI_RECIPE_BOOK_RIGHT_LEFT_MARGIN
-        right_panel = Rect(RIGHT_X, LEFT_Y, screen_w - RIGHT_X - 10, screen_h - LEFT_Y - 10)
+        right_panel = Rect(
+            RIGHT_X, LEFT_Y, screen_w - RIGHT_X - 10, screen_h - LEFT_Y - 10
+        )
         draw.rect(self.image, COLOR_RECIPE_RIGHT_PANEL_BG, right_panel, border_radius=8)
-        draw.rect(self.image, COLOR_RECIPE_RIGHT_PANEL_BORDER, right_panel, width=1, border_radius=8)
+        draw.rect(
+            self.image,
+            COLOR_RECIPE_RIGHT_PANEL_BORDER,
+            right_panel,
+            width=1,
+            border_radius=8,
+        )
 
         if selected_idx >= len(machines):
             return
@@ -476,20 +517,28 @@ class UI(EventEmitter, DirtySprite):
         machine_data = Data.machine_data[machine_type]
         recipes = machine_data["recipes"]
 
-        title2, _ = self._font.render(machine_type.replace("_", " ").title(), COLOR_RECIPE_MACHINE_TITLE)
+        title2, _ = self._font.render(
+            machine_type.replace("_", " ").title(), COLOR_RECIPE_MACHINE_TITLE
+        )
         self.image.blit(title2, (right_panel.x + 12, right_panel.y + 8))
 
         desc_y = right_panel.y + 36
         if machine_type == "miner":
-            desc, _ = self._medium_font.render(UI_TEXT_MINER_DESCRIPTION, COLOR_RECIPE_DESCRIPTION)
+            desc, _ = self._medium_font.render(
+                UI_TEXT_MINER_DESCRIPTION, COLOR_RECIPE_DESCRIPTION
+            )
             self.image.blit(desc, (right_panel.x + 12, desc_y))
             return
         if machine_type == "seller":
-            desc, _ = self._medium_font.render(UI_TEXT_SELLER_DESCRIPTION, COLOR_RECIPE_DESCRIPTION)
+            desc, _ = self._medium_font.render(
+                UI_TEXT_SELLER_DESCRIPTION, COLOR_RECIPE_DESCRIPTION
+            )
             self.image.blit(desc, (right_panel.x + 12, desc_y))
             return
         if not recipes:
-            desc, _ = self._medium_font.render(UI_TEXT_NO_RECIPES, COLOR_RECIPE_NO_RECIPES)
+            desc, _ = self._medium_font.render(
+                UI_TEXT_NO_RECIPES, COLOR_RECIPE_NO_RECIPES
+            )
             self.image.blit(desc, (right_panel.x + 12, desc_y))
             return
 
@@ -507,9 +556,13 @@ class UI(EventEmitter, DirtySprite):
                 break
             card = Rect(right_panel.x + 8, ry, right_panel.width - 16, CARD_H)
             draw.rect(self.image, COLOR_RECIPE_CARD_BG, card, border_radius=5)
-            draw.rect(self.image, COLOR_RECIPE_CARD_BORDER, card, width=1, border_radius=5)
+            draw.rect(
+                self.image, COLOR_RECIPE_CARD_BORDER, card, width=1, border_radius=5
+            )
 
-            dur_surf, _ = self._medium_font.render(f"{recipe['duration']}s", COLOR_RECIPE_DURATION)
+            dur_surf, _ = self._medium_font.render(
+                f"{recipe['duration']}s", COLOR_RECIPE_DURATION
+            )
             dur_y = card.y + (CARD_H - dur_surf.get_height()) // 2
             self.image.blit(dur_surf, (card.x + 6, dur_y))
 
@@ -519,9 +572,13 @@ class UI(EventEmitter, DirtySprite):
                 item_d = Data.get_item_data(inp["type"])
                 icon = self._get_item_icon(item_d["sprite"], (ICON_SIZE, ICON_SIZE))
                 self.image.blit(icon, (rx, card.y + ICON_Y))
-                amount_surf, _ = self._icon_font.render(f"×{inp['amount']}", COLOR_RECIPE_INPUT_AMOUNT)
+                amount_surf, _ = self._icon_font.render(
+                    f"×{inp['amount']}", COLOR_RECIPE_INPUT_AMOUNT
+                )
                 self.image.blit(amount_surf, (rx, card.y + AMOUNT_Y))
-                name_surf, _ = self._icon_font.render(inp["type"].replace("_", " "), COLOR_RECIPE_INPUT_NAME)
+                name_surf, _ = self._icon_font.render(
+                    inp["type"].replace("_", " "), COLOR_RECIPE_INPUT_NAME
+                )
                 self.image.blit(name_surf, (rx, card.y + NAME_Y))
                 col_w = max(ICON_SIZE + 6, name_surf.get_width() + 6)
                 rx += col_w + 4
@@ -536,9 +593,14 @@ class UI(EventEmitter, DirtySprite):
                 price = item_d.get("price", 0)
                 icon = self._get_item_icon(item_d["sprite"], (ICON_SIZE, ICON_SIZE))
                 self.image.blit(icon, (rx, card.y + ICON_Y))
-                amount_surf, _ = self._icon_font.render(f"×{out['amount']}", COLOR_RECIPE_OUTPUT_AMOUNT)
+                amount_surf, _ = self._icon_font.render(
+                    f"×{out['amount']}", COLOR_RECIPE_OUTPUT_AMOUNT
+                )
                 self.image.blit(amount_surf, (rx, card.y + AMOUNT_Y))
-                name_surf, _ = self._icon_font.render(f"{out['type'].replace('_', ' ')}  ${price:,}", COLOR_RECIPE_OUTPUT_NAME)
+                name_surf, _ = self._icon_font.render(
+                    f"{out['type'].replace('_', ' ')}  ${price:,}",
+                    COLOR_RECIPE_OUTPUT_NAME,
+                )
                 self.image.blit(name_surf, (rx, card.y + NAME_Y))
                 col_w = max(ICON_SIZE + 6, name_surf.get_width() + 6)
                 rx += col_w + 4
@@ -561,7 +623,9 @@ class UI(EventEmitter, DirtySprite):
             3: "REMOVE",
         }
 
-        mode_panel = Rect(UI_MODE_PANEL_X, UI_MODE_PANEL_Y, UI_MODE_PANEL_WIDTH, UI_MODE_PANEL_HEIGHT)
+        mode_panel = Rect(
+            UI_MODE_PANEL_X, UI_MODE_PANEL_Y, UI_MODE_PANEL_WIDTH, UI_MODE_PANEL_HEIGHT
+        )
         draw.rect(self.image, COLOR_MODE_PANEL_BG, mode_panel, border_radius=6)
         draw.rect(
             self.image, COLOR_MODE_PANEL_BORDER, mode_panel, width=2, border_radius=6

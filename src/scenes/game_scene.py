@@ -35,7 +35,10 @@ class GameScene(Scene):
 
     def handle_event(self, evt: pygame.event.Event):
         if evt.type == pygame.MOUSEBUTTONDOWN and getattr(evt, "button", 0) == 1:
-            if not self.game.input.recipe_book_open and self._menu_button_rect.collidepoint(evt.pos):
+            if (
+                not self.game.input.recipe_book_open
+                and self._menu_button_rect.collidepoint(evt.pos)
+            ):
                 self.game.scene_manager.change_scene("main_menu")
                 return
 

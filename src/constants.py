@@ -210,6 +210,8 @@ UI_SCENE_BUTTON_HEIGHT = 36
 
 UI_TEXT_RECIPE_BOOK_TITLE = "Recipe Book  [TAB to close | ↑↓ or scroll to navigate]"
 UI_TEXT_MINER_DESCRIPTION = "Produces copper ore every 3 seconds."
-UI_TEXT_SELLER_DESCRIPTION = "Sells any item that arrives, earning its sell price instantly."
+UI_TEXT_SELLER_DESCRIPTION = (
+    "Sells any item that arrives, earning its sell price instantly."
+)
 UI_TEXT_NO_RECIPES = "No recipes."
 UI_TEXT_HINT = "M: switch mode  |  TAB: recipes"

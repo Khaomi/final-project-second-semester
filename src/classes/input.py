@@ -184,7 +184,12 @@ class Input(EventEmitter):
     def __on_mousewheel(self, value: dict[str, Any]):
         if self.recipe_book_open:
             machines = [k for k in self.game.data.machine_data.keys() if k != "unknown"]
-            self.recipe_book_scroll = max(0, min(len(machines) - 1, self.recipe_book_scroll - int(value.get("y", 0))))
+            self.recipe_book_scroll = max(
+                0,
+                min(
+                    len(machines) - 1, self.recipe_book_scroll - int(value.get("y", 0))
+                ),
+            )
             return
 
         delta = float(value.get("y", 0)) * ZOOM_SCROLL_MULTIPLIER
@@ -204,7 +209,10 @@ class Input(EventEmitter):
         if self.recipe_book_open:
             machines = [k for k in self.game.data.machine_data.keys() if k != "unknown"]
             left_panel_x, left_panel_y, left_panel_w, item_h = 10, 40, 210, 40
-            if left_panel_x <= pos.x <= left_panel_x + left_panel_w and pos.y >= left_panel_y:
+            if (
+                left_panel_x <= pos.x <= left_panel_x + left_panel_w
+                and pos.y >= left_panel_y
+            ):
                 rel_y = pos.y - left_panel_y - 8
                 clicked_idx = int(rel_y // item_h) + self.recipe_book_scroll
                 if 0 <= clicked_idx < len(machines):
@@ -266,11 +274,17 @@ class Input(EventEmitter):
             if value["key"] == pygame.K_UP:
                 self.recipe_book_machine_idx = max(0, self.recipe_book_machine_idx - 1)
             elif value["key"] == pygame.K_DOWN:
-                self.recipe_book_machine_idx = min(len(machines) - 1, self.recipe_book_machine_idx + 1)
+                self.recipe_book_machine_idx = min(
+                    len(machines) - 1, self.recipe_book_machine_idx + 1
+                )
             if self.recipe_book_machine_idx < self.recipe_book_scroll:
                 self.recipe_book_scroll = self.recipe_book_machine_idx
-            elif self.recipe_book_machine_idx >= self.recipe_book_scroll + visible_count:
-                self.recipe_book_scroll = self.recipe_book_machine_idx - visible_count + 1
+            elif (
+                self.recipe_book_machine_idx >= self.recipe_book_scroll + visible_count
+            ):
+                self.recipe_book_scroll = (
+                    self.recipe_book_machine_idx - visible_count + 1
+                )
             return
 
         if value["key"] in [pygame.K_EQUALS, pygame.K_KP_PLUS]:
