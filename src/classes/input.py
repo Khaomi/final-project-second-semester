@@ -10,6 +10,16 @@ from src.constants import (
     INPUT_MODE_MAX,
     INPUT_MODE_MIN,
     INPUT_RECIPE_BOOK_VISIBLE_ITEMS,
+    UI_EDGE_PADDING_X,
+    UI_EDGE_PADDING_Y,
+    UI_RECIPE_BOOK_LEFT_X,
+    UI_RECIPE_BOOK_LEFT_Y,
+    UI_RECIPE_BOOK_LEFT_W,
+    UI_RECIPE_BOOK_ITEM_H,
+    UI_RECIPE_BOOK_LEFT_PADDING,
+    UI_MACHINE_RECIPE_MENU_PADDING,
+    UI_MACHINE_RECIPE_MENU_ROW_HEIGHT,
+    UI_MACHINE_RECIPE_MENU_WIDTH,
     ZOOM_SCROLL_MULTIPLIER,
     ZOOM_KEYBOARD_STEP,
 )
@@ -17,7 +27,7 @@ from src.machines import Seller, Miner
 from typing import TYPE_CHECKING, Any
 from src.classes import EventEmitter
 from dataclasses import dataclass
-from pygame import Vector2, mouse
+from pygame import Rect, Vector2, display, mouse
 import pygame
 
 if TYPE_CHECKING:
@@ -47,6 +57,10 @@ class Input(EventEmitter):
         self.recipe_book_open: bool = False
         self.recipe_book_machine_idx: int = 0
         self.recipe_book_scroll: int = 0
+
+        self.machine_recipe_menu_open: bool = False
+        self.machine_recipe_menu_machine: Machine | None = None
+        self.machine_recipe_menu_pos: Vector2 = Vector2(0, 0)
 
         self.selectors: list[SelectorOption] = [
             SelectorOption(kind="belt", cost=0),
@@ -147,6 +161,65 @@ class Input(EventEmitter):
             obj.destroy()
             return
 
+    def _close_machine_recipe_menu(self):
+        self.machine_recipe_menu_open = False
+        self.machine_recipe_menu_machine = None
+
+    def _get_machine_recipe_menu_rect(self) -> Rect:
+        item_count = 1
+        if self.machine_recipe_menu_machine is not None:
+            item_count += len(self.machine_recipe_menu_machine.recipes)
+
+        screen_w, screen_h = display.get_window_size()
+        menu_w = min(
+            UI_MACHINE_RECIPE_MENU_WIDTH,
+            max(120, screen_w - (UI_EDGE_PADDING_X * 2)),
+        )
+        menu_h = (UI_MACHINE_RECIPE_MENU_PADDING * 2) + (
+            UI_MACHINE_RECIPE_MENU_ROW_HEIGHT * item_count
+        )
+        menu_h = min(menu_h, max(60, screen_h - (UI_EDGE_PADDING_Y * 2)))
+
+        x = int(self.machine_recipe_menu_pos.x)
+        y = int(self.machine_recipe_menu_pos.y)
+        x = min(
+            max(UI_EDGE_PADDING_X, x),
+            max(UI_EDGE_PADDING_X, screen_w - menu_w - UI_EDGE_PADDING_X),
+        )
+        y = min(
+            max(UI_EDGE_PADDING_Y, y),
+            max(UI_EDGE_PADDING_Y, screen_h - menu_h - UI_EDGE_PADDING_Y),
+        )
+        return Rect(x, y, menu_w, menu_h)
+
+    def _get_clicked_recipe_menu_option(self, pos: Vector2) -> int | None:
+        if not self.machine_recipe_menu_open or self.machine_recipe_menu_machine is None:
+            return None
+
+        rect = self._get_machine_recipe_menu_rect()
+        if not rect.collidepoint(pos.x, pos.y):
+            return None
+
+        rel_y = pos.y - rect.y - UI_MACHINE_RECIPE_MENU_PADDING
+        if rel_y < 0:
+            return None
+
+        row = int(rel_y // UI_MACHINE_RECIPE_MENU_ROW_HEIGHT)
+        max_row = len(self.machine_recipe_menu_machine.recipes)
+        if row < 0 or row > max_row:
+            return None
+        return row
+
+    def _machine_at_grid(self, grid_position: tuple[int, int]) -> Machine | None:
+        if grid_position not in self.game.position_map:
+            return None
+
+        for obj in self.game.position_map[grid_position]:
+            if isinstance(obj, Machine) and not obj.destroyed:
+                return obj
+
+        return None
+
     def __on_mouseup(self, _: Any):
         if self.mode != 2:
             return
@@ -182,6 +255,9 @@ class Input(EventEmitter):
         self.game.request_flip(False)
 
     def __on_mousewheel(self, value: dict[str, Any]):
+        if self.machine_recipe_menu_open:
+            return
+
         if self.recipe_book_open:
             machines = [k for k in self.game.data.machine_data.keys() if k != "unknown"]
             self.recipe_book_scroll = max(
@@ -199,21 +275,46 @@ class Input(EventEmitter):
         self.game.camera.adjust_zoom(delta, Vector2(pygame.mouse.get_pos()))
 
     def __on_mousedown(self, value: dict[str, Any]):
+        pos = Vector2(value["pos"][0], value["pos"][1])
+        grid_position = self._grid_position_from_screen(pos)
+
+        if value["button"] == 3:
+            if self.recipe_book_open:
+                return
+
+            machine = self._machine_at_grid(grid_position)
+            if machine is None or len(machine.recipes) <= 1:
+                self._close_machine_recipe_menu()
+                return
+
+            self.machine_recipe_menu_open = True
+            self.machine_recipe_menu_machine = machine
+            self.machine_recipe_menu_pos = pos
+            return
+
         if value["button"] != 1:
             return
 
         # Key: Left click
-        pos = Vector2(value["pos"][0], value["pos"][1])
-        grid_position = self._grid_position_from_screen(pos)
+        if self.machine_recipe_menu_open:
+            option = self._get_clicked_recipe_menu_option(pos)
+            machine = self.machine_recipe_menu_machine
+            if option is not None and machine is not None:
+                machine.set_selected_recipe(None if option == 0 else option - 1)
+            self._close_machine_recipe_menu()
+            return
 
         if self.recipe_book_open:
             machines = [k for k in self.game.data.machine_data.keys() if k != "unknown"]
-            left_panel_x, left_panel_y, left_panel_w, item_h = 10, 40, 210, 40
+            left_panel_x = UI_RECIPE_BOOK_LEFT_X
+            left_panel_y = UI_RECIPE_BOOK_LEFT_Y
+            left_panel_w = UI_RECIPE_BOOK_LEFT_W
+            item_h = UI_RECIPE_BOOK_ITEM_H
             if (
                 left_panel_x <= pos.x <= left_panel_x + left_panel_w
                 and pos.y >= left_panel_y
             ):
-                rel_y = pos.y - left_panel_y - 8
+                rel_y = pos.y - left_panel_y - UI_RECIPE_BOOK_LEFT_PADDING
                 clicked_idx = int(rel_y // item_h) + self.recipe_book_scroll
                 if 0 <= clicked_idx < len(machines):
                     self.recipe_book_machine_idx = clicked_idx
@@ -221,11 +322,11 @@ class Input(EventEmitter):
 
         if self.mode == 1:
             _, height = pygame.display.get_window_size()
-            y = height - 16 - GRID_SIZE
+            y = height - UI_EDGE_PADDING_Y - GRID_SIZE
 
-            max_x = len(self.selectors) * GRID_SIZE
-            if y <= pos.y < y + GRID_SIZE and pos.x < max_x:
-                index = int(pos.x // GRID_SIZE)
+            max_x = UI_EDGE_PADDING_X + (len(self.selectors) * GRID_SIZE)
+            if y <= pos.y < y + GRID_SIZE and UI_EDGE_PADDING_X <= pos.x < max_x:
+                index = int((pos.x - UI_EDGE_PADDING_X) // GRID_SIZE)
                 if index < len(self.selectors):
                     self.selected_obj = self.selectors[index]
                 return
@@ -264,8 +365,13 @@ class Input(EventEmitter):
         pass
 
     def __on_keydown(self, value: dict[str, Any]):
+        if value["key"] == pygame.K_ESCAPE and self.machine_recipe_menu_open:
+            self._close_machine_recipe_menu()
+            return
+
         if value["key"] == pygame.K_TAB:
             self.recipe_book_open = not self.recipe_book_open
+            self._close_machine_recipe_menu()
             return
 
         if self.recipe_book_open:
@@ -330,6 +436,7 @@ class Input(EventEmitter):
             self._sync_selector_rotation()
 
     def destroy(self):
+        self._close_machine_recipe_menu()
         self.game.remove_listener(f"PYGAME_{pygame.MOUSEBUTTONUP}", self.__on_mouseup)
         self.game.remove_listener(
             f"PYGAME_{pygame.MOUSEBUTTONDOWN}", self.__on_mousedown

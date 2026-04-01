@@ -50,12 +50,22 @@ from src.constants import (
     COLOR_HINT_TEXT,
     COLOR_SELECTOR_SELECTED_BORDER,
     COLOR_SELECTOR_UNSELECTED_BORDER,
+    COLOR_MACHINE_RECIPE_MENU_BG,
+    COLOR_MACHINE_RECIPE_MENU_BORDER,
+    COLOR_MACHINE_RECIPE_MENU_ROW,
+    COLOR_MACHINE_RECIPE_MENU_ROW_SELECTED,
+    COLOR_MACHINE_RECIPE_MENU_ROW_HOVER,
+    COLOR_MACHINE_RECIPE_MENU_TEXT,
+    COLOR_MACHINE_RECIPE_MENU_TEXT_SELECTED,
     FONT_MAIN_SIZE,
     FONT_ICON_SIZE,
     FONT_MEDIUM_SIZE,
-    UI_ZOOM_PANEL_X_OFFSET,
     UI_ZOOM_PANEL_WIDTH,
     UI_ZOOM_PANEL_HEIGHT,
+    UI_EDGE_PADDING_X,
+    UI_EDGE_PADDING_Y,
+    UI_PANEL_PADDING_X,
+    UI_PANEL_PADDING_Y,
     UI_INFO_PANEL_MAX_WIDTH,
     UI_INFO_PANEL_X_PADDING,
     UI_INFO_PANEL_Y_OFFSET,
@@ -80,6 +90,9 @@ from src.constants import (
     UI_RECIPE_CARD_NAME_Y,
     UI_RECIPE_CARD_DURATION_COL_WIDTH,
     UI_SELECTOR_ICON_MARGIN,
+    UI_MACHINE_RECIPE_MENU_WIDTH,
+    UI_MACHINE_RECIPE_MENU_PADDING,
+    UI_MACHINE_RECIPE_MENU_ROW_HEIGHT,
     UI_TEXT_RECIPE_BOOK_TITLE,
     UI_TEXT_MINER_DESCRIPTION,
     UI_TEXT_SELLER_DESCRIPTION,
@@ -308,8 +321,8 @@ class UI(EventEmitter, DirtySprite):
 
     def _draw_zoom_info(self):
         zoom_panel = Rect(
-            self.rect.width - UI_ZOOM_PANEL_X_OFFSET,
-            UI_ZOOM_PANEL_HEIGHT - UI_ZOOM_PANEL_HEIGHT + 12,
+            self.rect.width - UI_ZOOM_PANEL_WIDTH - UI_EDGE_PADDING_X,
+            UI_EDGE_PADDING_Y,
             UI_ZOOM_PANEL_WIDTH,
             UI_ZOOM_PANEL_HEIGHT,
         )
@@ -343,6 +356,15 @@ class UI(EventEmitter, DirtySprite):
         else:
             lines.append(f"Machine type: {machine.type}")
             lines.append(f"Timer: {machine.timer}")
+            selected_recipe = machine.get_selected_recipe()
+            if selected_recipe is None:
+                lines.append("Recipe mode: Auto")
+            else:
+                recipe = machine.recipes[selected_recipe]
+                outputs = ", ".join(
+                    out["type"].replace("_", " ") for out in recipe["outputs"]
+                )
+                lines.append(f"Recipe mode: {selected_recipe + 1} ({outputs})")
             lines.append(f"Inventory: {machine.inventory}")
 
         panel_width = min(UI_INFO_PANEL_MAX_WIDTH, self.rect.width - 24)
@@ -500,7 +522,10 @@ class UI(EventEmitter, DirtySprite):
 
         RIGHT_X = LEFT_X + LEFT_W + UI_RECIPE_BOOK_RIGHT_LEFT_MARGIN
         right_panel = Rect(
-            RIGHT_X, LEFT_Y, screen_w - RIGHT_X - 10, screen_h - LEFT_Y - 10
+            RIGHT_X,
+            LEFT_Y,
+            screen_w - RIGHT_X - UI_EDGE_PADDING_X,
+            screen_h - LEFT_Y - UI_EDGE_PADDING_Y,
         )
         draw.rect(self.image, COLOR_RECIPE_RIGHT_PANEL_BG, right_panel, border_radius=8)
         draw.rect(
@@ -552,9 +577,14 @@ class UI(EventEmitter, DirtySprite):
 
         ry = desc_y
         for recipe in recipes:
-            if ry + RECIPE_H > right_panel.bottom - 8:
+            if ry + RECIPE_H > right_panel.bottom - UI_PANEL_PADDING_Y:
                 break
-            card = Rect(right_panel.x + 8, ry, right_panel.width - 16, CARD_H)
+            card = Rect(
+                right_panel.x + UI_PANEL_PADDING_X,
+                ry,
+                right_panel.width - (UI_PANEL_PADDING_X * 2),
+                CARD_H,
+            )
             draw.rect(self.image, COLOR_RECIPE_CARD_BG, card, border_radius=5)
             draw.rect(
                 self.image, COLOR_RECIPE_CARD_BORDER, card, width=1, border_radius=5
@@ -607,6 +637,112 @@ class UI(EventEmitter, DirtySprite):
 
             ry += RECIPE_H
 
+    def _draw_machine_recipe_menu(self):
+        input_state = self.game.input
+        machine = input_state.machine_recipe_menu_machine
+        if not input_state.machine_recipe_menu_open or machine is None:
+            return
+
+        option_count = len(machine.recipes) + 1
+        menu_w = min(
+            UI_MACHINE_RECIPE_MENU_WIDTH,
+            max(120, self.rect.width - (UI_EDGE_PADDING_X * 2)),
+        )
+        menu_h = (UI_MACHINE_RECIPE_MENU_PADDING * 2) + (
+            UI_MACHINE_RECIPE_MENU_ROW_HEIGHT * option_count
+        )
+        menu_h = min(menu_h, max(60, self.rect.height - (UI_EDGE_PADDING_Y * 2)))
+        screen_w, screen_h = self.rect.width, self.rect.height
+
+        menu_x = int(input_state.machine_recipe_menu_pos.x)
+        menu_y = int(input_state.machine_recipe_menu_pos.y)
+        menu_x = min(
+            max(UI_EDGE_PADDING_X, menu_x),
+            max(UI_EDGE_PADDING_X, screen_w - menu_w - UI_EDGE_PADDING_X),
+        )
+        menu_y = min(
+            max(UI_EDGE_PADDING_Y, menu_y),
+            max(UI_EDGE_PADDING_Y, screen_h - menu_h - UI_EDGE_PADDING_Y),
+        )
+
+        panel = Rect(menu_x, menu_y, menu_w, menu_h)
+        draw.rect(self.image, COLOR_MACHINE_RECIPE_MENU_BG, panel, border_radius=8)
+        draw.rect(
+            self.image,
+            COLOR_MACHINE_RECIPE_MENU_BORDER,
+            panel,
+            width=2,
+            border_radius=8,
+        )
+
+        selected_recipe = machine.get_selected_recipe()
+        mouse_pos = Vector2(mouse.get_pos())
+        base_y = panel.y + UI_MACHINE_RECIPE_MENU_PADDING
+        for row_idx in range(option_count):
+            row_rect = Rect(
+                panel.x + UI_PANEL_PADDING_X,
+                base_y + (row_idx * UI_MACHINE_RECIPE_MENU_ROW_HEIGHT),
+                panel.width - (UI_PANEL_PADDING_X * 2),
+                UI_MACHINE_RECIPE_MENU_ROW_HEIGHT - 2,
+            )
+
+            is_selected = row_idx == 0 if selected_recipe is None else row_idx == (selected_recipe + 1)
+            is_hovered = row_rect.collidepoint(mouse_pos.x, mouse_pos.y)
+
+            row_color = COLOR_MACHINE_RECIPE_MENU_ROW
+            if is_selected:
+                row_color = COLOR_MACHINE_RECIPE_MENU_ROW_SELECTED
+            elif is_hovered:
+                row_color = COLOR_MACHINE_RECIPE_MENU_ROW_HOVER
+            draw.rect(self.image, row_color, row_rect, border_radius=5)
+
+            icon_size = max(16, UI_MACHINE_RECIPE_MENU_ROW_HEIGHT - 10)
+            icon_x = row_rect.x + UI_PANEL_PADDING_Y
+            icon_y = row_rect.y + (row_rect.height - icon_size) // 2
+            text_x = icon_x + icon_size + UI_PANEL_PADDING_Y
+
+            if row_idx == 0:
+                label = "Auto (first available recipe)"
+                machine_data = self.game.data.get_machine_data(machine.type)
+                icon = self._get_item_icon(
+                    machine_data["sprite"], (icon_size, icon_size)
+                )
+            else:
+                recipe = machine.recipes[row_idx - 1]
+                inputs = " + ".join(
+                    f"{inp['amount']}x {inp['type'].replace('_', ' ')}"
+                    for inp in recipe["inputs"]
+                )
+                outputs = " + ".join(
+                    f"{out['amount']}x {out['type'].replace('_', ' ')}"
+                    for out in recipe["outputs"]
+                )
+                if inputs == "":
+                    inputs = "none"
+                if outputs == "":
+                    outputs = "none"
+                label = f"{row_idx}. {inputs} -> {outputs} ({recipe['duration']}s)"
+                first_output = recipe["outputs"][0] if recipe["outputs"] else None
+                if first_output is not None:
+                    item_data = self.game.data.get_item_data(first_output["type"])
+                    icon = self._get_item_icon(
+                        item_data["sprite"], (icon_size, icon_size)
+                    )
+                else:
+                    machine_data = self.game.data.get_machine_data(machine.type)
+                    icon = self._get_item_icon(
+                        machine_data["sprite"], (icon_size, icon_size)
+                    )
+
+            text_color = (
+                COLOR_MACHINE_RECIPE_MENU_TEXT_SELECTED
+                if is_selected
+                else COLOR_MACHINE_RECIPE_MENU_TEXT
+            )
+            self.image.blit(icon, (icon_x, icon_y))
+            label_surf, _ = self._medium_font.render(label, text_color)
+            self.image.blit(label_surf, (text_x, row_rect.y + UI_PANEL_PADDING_Y // 2))
+
     def _redraw(self):
         assert self.image is not None
         assert self.rect is not None
@@ -623,14 +759,6 @@ class UI(EventEmitter, DirtySprite):
             3: "REMOVE",
         }
 
-        mode_panel = Rect(
-            UI_MODE_PANEL_X, UI_MODE_PANEL_Y, UI_MODE_PANEL_WIDTH, UI_MODE_PANEL_HEIGHT
-        )
-        draw.rect(self.image, COLOR_MODE_PANEL_BG, mode_panel, border_radius=6)
-        draw.rect(
-            self.image, COLOR_MODE_PANEL_BORDER, mode_panel, width=2, border_radius=6
-        )
-
         mode_text, _ = self._font.render(
             f"Mode: {mode_names.get(mode, 'UNKNOWN')}", COLOR_MODE_TEXT
         )
@@ -638,12 +766,50 @@ class UI(EventEmitter, DirtySprite):
             f"Cash: ${int(self.game.data.cash):,}", COLOR_CASH_TEXT
         )
         hint_text, _ = self._medium_font.render(UI_TEXT_HINT, COLOR_HINT_TEXT)
-        self.image.blit(mode_text, (mode_panel.x + 10, mode_panel.y + 8))
-        self.image.blit(cash_text, (mode_panel.x + 10, mode_panel.y + 34))
-        self.image.blit(hint_text, (mode_panel.x + 10, mode_panel.y + 62))
 
-        y = self.rect.height - 16 - GRID_SIZE
-        x = 0
+        line_gap = 4
+        content_width = max(
+            mode_text.get_width(),
+            cash_text.get_width(),
+            hint_text.get_width(),
+        )
+        content_height = (
+            mode_text.get_height()
+            + cash_text.get_height()
+            + hint_text.get_height()
+            + (line_gap * 2)
+        )
+
+        panel_width = max(UI_MODE_PANEL_WIDTH, content_width + (UI_PANEL_PADDING_X * 2))
+        panel_height = max(
+            UI_MODE_PANEL_HEIGHT,
+            content_height + (UI_PANEL_PADDING_Y * 2),
+        )
+
+        panel_width = min(panel_width, self.rect.width - (UI_EDGE_PADDING_X * 2))
+        panel_height = min(panel_height, self.rect.height - (UI_EDGE_PADDING_Y * 2))
+
+        mode_panel = Rect(
+            UI_MODE_PANEL_X,
+            UI_MODE_PANEL_Y,
+            panel_width,
+            panel_height,
+        )
+        draw.rect(self.image, COLOR_MODE_PANEL_BG, mode_panel, border_radius=6)
+        draw.rect(
+            self.image, COLOR_MODE_PANEL_BORDER, mode_panel, width=2, border_radius=6
+        )
+
+        text_x = mode_panel.x + UI_PANEL_PADDING_X
+        text_y = mode_panel.y + UI_PANEL_PADDING_Y
+        self.image.blit(mode_text, (text_x, text_y))
+        text_y += mode_text.get_height() + line_gap
+        self.image.blit(cash_text, (text_x, text_y))
+        text_y += cash_text.get_height() + line_gap
+        self.image.blit(hint_text, (text_x, text_y))
+
+        y = self.rect.height - UI_EDGE_PADDING_Y - GRID_SIZE
+        x = UI_EDGE_PADDING_X
 
         for option in selectors:
             slot = Rect(x, y, GRID_SIZE, GRID_SIZE)
@@ -665,6 +831,7 @@ class UI(EventEmitter, DirtySprite):
         self._draw_cursor_preview(selected, mode)
         self._draw_zoom_info()
         self._draw_hovered_machine_info()
+        self._draw_machine_recipe_menu()
 
         if self.game.input.recipe_book_open:
             self._draw_recipe_book()

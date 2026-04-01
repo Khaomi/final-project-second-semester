@@ -39,7 +39,8 @@ class Machine(Sprite):
         self.recipes = data["recipes"]
 
         self.inventory: dict[str, int] = {}
-        self.__selected_recipe: int | None = None
+        self._active_recipe: int | None = None
+        self._selected_recipe_index: int | None = None
         self.timer = 0
 
         self.game.add_listener("update", self.update)
@@ -65,10 +66,14 @@ class Machine(Sprite):
     def __process_recipes(
         self,
     ):
-        if self.__selected_recipe is not None:
+        if self._active_recipe is not None:
             return
 
-        for idx in range(len(self.recipes)):
+        recipe_order = list(range(len(self.recipes)))
+        if self._selected_recipe_index is not None:
+            recipe_order = [self._selected_recipe_index]
+
+        for idx in recipe_order:
             recipe = self.recipes[idx]
             passed = True
 
@@ -84,14 +89,14 @@ class Machine(Sprite):
             if not passed:
                 continue
 
-            self.__selected_recipe = idx
+            self._active_recipe = idx
             break
 
     def __consume_recipe(self):
-        if self.__selected_recipe is None:
+        if self._active_recipe is None:
             return
 
-        recipe_index = self.__selected_recipe
+        recipe_index = self._active_recipe
         recipe = self.recipes[recipe_index]
         inputs: list[str] = []
         outputs: list[str] = []
@@ -116,8 +121,21 @@ class Machine(Sprite):
             outputs=outputs,
         )
 
-        self.__selected_recipe = None
+        self._active_recipe = None
         self.__process_recipes()
+
+    def set_selected_recipe(self, recipe_index: int | None):
+        if recipe_index is not None:
+            if recipe_index < 0 or recipe_index >= len(self.recipes):
+                return
+
+        self._selected_recipe_index = recipe_index
+        self._active_recipe = None
+        self.timer = 0
+        self.__process_recipes()
+
+    def get_selected_recipe(self) -> int | None:
+        return self._selected_recipe_index
 
     def insert_item(self, type: str):
         if type not in self.inventory:
@@ -131,12 +149,12 @@ class Machine(Sprite):
         self.game.objects.append(item)
 
     def update(self, dt: float):
-        if self.__selected_recipe is None:
+        if self._active_recipe is None:
             return
 
         self.timer += dt
 
-        recipe = self.recipes[self.__selected_recipe]
+        recipe = self.recipes[self._active_recipe]
         if self.timer < recipe["duration"]:
             return
 
@@ -156,6 +174,7 @@ class Machine(Sprite):
             "position": (int(self.position.x), int(self.position.y)),
             "rotation": int(self.rotation),
             "inventory": self.inventory,
+            "selected_recipe": self._selected_recipe_index,
         }
 
     @classmethod
@@ -174,4 +193,10 @@ class Machine(Sprite):
             for key, value in inventory_dict.items():
                 parsed_inventory[str(key)] = int(value) if isinstance(value, int) else 0
             obj.inventory = parsed_inventory
+
+        selected_recipe = data.get("selected_recipe")
+        if isinstance(selected_recipe, int):
+            obj.set_selected_recipe(selected_recipe)
+        else:
+            obj.set_selected_recipe(None)
         return obj
